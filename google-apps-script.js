@@ -136,13 +136,17 @@ function addRegistration(sheet, data) {
     
     // Add new registration
     const timestamp = new Date().toLocaleString('en-EG', { timeZone: 'Africa/Cairo' });
-    sheet.appendRow([
+    const newRow = sheet.getLastRow() + 1;
+    
+    // Set phone column as text FIRST, then set value — prevents Sheets from dropping leading 0
+    sheet.getRange(newRow, 3).setNumberFormat('@');
+    sheet.getRange(newRow, 1, 1, 5).setValues([[
       timestamp,
       name,
-      "'" + normalizedPhone, // Prepend quote to force text formatting and keep leading 0
+      normalizedPhone,
       faculty,
       'Website'
-    ]);
+    ]]);
     
     return ContentService
       .createTextOutput(JSON.stringify({ 

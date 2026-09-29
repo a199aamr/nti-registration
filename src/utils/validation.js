@@ -47,7 +47,7 @@ export const validateName = (name) => {
 };
 
 export const validateFaculty = (faculty) => {
-  return typeof faculty === 'string' && faculty.trim().length > 0;
+  return faculty === 'Business' || faculty === 'IT';
 };
 
 // ==========================================

@@ -108,7 +108,6 @@ function App() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isOtherFaculty, setIsOtherFaculty] = useState(false);
 
   const { submitRegistration, checkDeviceLimit, isSubmitting } = useGoogleSheets();
 
@@ -211,22 +210,8 @@ function App() {
   };
 
   const handleFacultySelect = (faculty) => {
-    if (faculty === 'Other') {
-      setIsOtherFaculty(true);
-      setFormData(prev => ({ ...prev, faculty: '' }));
-    } else {
-      setIsOtherFaculty(false);
-      setFormData(prev => ({ ...prev, faculty }));
-    }
+    setFormData(prev => ({ ...prev, faculty }));
     if (errors.faculty) {
-      setErrors(prev => ({ ...prev, faculty: '' }));
-    }
-  };
-
-  const handleCustomFacultyChange = (e) => {
-    const val = e.target.value;
-    setFormData(prev => ({ ...prev, faculty: val }));
-    if (errors.faculty && val.trim().length > 0) {
       setErrors(prev => ({ ...prev, faculty: '' }));
     }
   };
@@ -256,7 +241,6 @@ function App() {
     setErrors({});
     setTouched({});
     setStep(1);
-    setIsOtherFaculty(false);
     setShowConfetti(false);
     setScreen('welcome');
   };
@@ -279,12 +263,12 @@ function App() {
           <div className="welcome-screen">
             <div className="welcome-logo-container">
               <div className="welcome-logo-glow" />
-              <img src={creativaLogo} alt="Creativa Logo" className="welcome-logo" style={{ borderRadius: '15px' }} />
+              <img src={eeluLogo} alt="EELU Logo" className="welcome-logo" />
             </div>
 
             <h1 className="welcome-title">Orientation Day</h1>
             <p className="welcome-subtitle">
-              Welcome to <span>Creativa</span>
+              Welcome to <span>EELU</span> — The Egyptian E-Learning University
             </p>
 
             <div className="welcome-date">
@@ -346,7 +330,7 @@ function App() {
               </div>
               <div className="success-info-row">
                 <span className="success-info-label">Faculty</span>
-                <span className="success-info-value">{formData.faculty}</span>
+                <span className="success-info-value">Faculty of {formData.faculty}</span>
               </div>
             </div>
 
@@ -461,29 +445,17 @@ function App() {
       <ParticleBackground />
       <div className="app-container">
         <div className="form-wrapper">
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+          {/* Top logo small */}
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <img
-              src={creativaLogo}
-              alt="Creativa"
+              src={eeluLogo}
+              alt="EELU"
               style={{
                 width: '60px',
                 height: '60px',
-                borderRadius: '12px',
-                objectFit: 'contain',
-                background: 'white',
-                padding: '5px'
-              }}
-            />
-            <img
-              src={ntiLogo}
-              alt="NTI"
-              style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '12px',
-                objectFit: 'contain',
-                background: 'white',
-                padding: '5px'
+                borderRadius: '50%',
+                border: '2px solid var(--border-color)',
+                objectFit: 'cover',
               }}
             />
           </div>
@@ -614,7 +586,7 @@ function App() {
                   </div>
 
                   <div
-                    className={`faculty-card ${formData.faculty === 'IT' && !isOtherFaculty ? 'selected' : ''}`}
+                    className={`faculty-card ${formData.faculty === 'IT' ? 'selected' : ''}`}
                     onClick={() => handleFacultySelect('IT')}
                     id="faculty-it"
                     role="button"
@@ -630,45 +602,7 @@ function App() {
                       <div className="faculty-desc">Information Technology</div>
                     </div>
                   </div>
-
-                  <div
-                    className={`faculty-card ${isOtherFaculty ? 'selected' : ''}`}
-                    onClick={() => handleFacultySelect('Other')}
-                    id="faculty-other"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFacultySelect('Other')}
-                  >
-                    <div className="faculty-check">
-                      <CheckIcon />
-                    </div>
-                    <UserIcon />
-                    <div>
-                      <div className="faculty-name">Other</div>
-                      <div className="faculty-desc">أخرى</div>
-                    </div>
-                  </div>
                 </div>
-
-                {isOtherFaculty && (
-                  <div className="input-group" style={{ marginTop: '1.5rem', animation: 'fadeInUp 0.3s ease-out' }}>
-                    <label className="input-label focused" htmlFor="custom-faculty">
-                      Your Faculty / تخصصك
-                    </label>
-                    <div className="input-icon-wrapper">
-                      <input
-                        id="custom-faculty"
-                        type="text"
-                        className="form-input valid"
-                        placeholder="e.g. Engineering / هندسة"
-                        value={formData.faculty}
-                        onChange={handleCustomFacultyChange}
-                        style={{ paddingLeft: '1rem' }}
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {errors.faculty && (
                   <div className="input-error" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
