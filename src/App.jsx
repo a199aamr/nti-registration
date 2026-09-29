@@ -540,7 +540,7 @@ function App() {
                       {errors.phone}
                     </div>
                   )}
-                  <div className="input-hint">Egyptian phone number format</div>
+                  <div className="input-hint">اكتب رقمك — يبدأ بـ 01 وطوله 11 رقم &nbsp;(مثال: 01012345678)</div>
                 </div>
 
                 <div className="form-nav" style={{ justifyContent: 'flex-end' }}>
