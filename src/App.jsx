@@ -263,12 +263,12 @@ function App() {
           <div className="welcome-screen">
             <div className="welcome-logo-container">
               <div className="welcome-logo-glow" />
-              <img src={eeluLogo} alt="EELU Logo" className="welcome-logo" />
+              <img src={ntiLogo} alt="NTI Logo" className="welcome-logo" style={{ objectFit: 'contain' }} />
             </div>
 
             <h1 className="welcome-title">Orientation Day</h1>
             <p className="welcome-subtitle">
-              Welcome to <span>EELU</span> — The Egyptian E-Learning University
+              Welcome to <span>Creativa</span> — Aswan
             </p>
 
             <div className="welcome-date">
@@ -288,9 +288,9 @@ function App() {
             </button>
 
             <div className="logo-bar">
-              <img src={creativaLogo} alt="Creativa Logo" />
-              <div className="logo-bar-divider" />
               <img src={ntiLogo} alt="NTI Logo" />
+              <div className="logo-bar-divider" />
+              <img src={creativaLogo} alt="Creativa Logo" />
             </div>
           </div>
         </div>
@@ -540,7 +540,7 @@ function App() {
                       {errors.phone}
                     </div>
                   )}
-                  <div className="input-hint">اكتب رقمك — يبدأ بـ 01 وطوله 11 رقم &nbsp;(مثال: 01012345678)</div>
+                  <div className="input-hint">Egyptian phone number format</div>
                 </div>
 
                 <div className="form-nav" style={{ justifyContent: 'flex-end' }}>
