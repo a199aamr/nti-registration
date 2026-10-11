@@ -46,36 +46,20 @@ export const validateName = (name) => {
   return regex.test(trimmed);
 };
 
+export const validateNationalId = (id) => {
+  if (!id) return false;
+  const trimmed = id.toString().trim();
+  // Egyptian National ID is 14 digits
+  return /^\d{14}$/.test(trimmed);
+};
+
 export const validateFaculty = (faculty) => {
   return faculty === 'Business' || faculty === 'IT';
 };
 
-// ==========================================
-// Device Registration Limit
-// ==========================================
-const DEVICE_LIMIT_KEY = 'eelu_device_reg_count';
-const DEVICE_LIMIT = 5;
-
-export const getDeviceRegistrationCount = () => {
-  try {
-    return parseInt(localStorage.getItem(DEVICE_LIMIT_KEY) || '0', 10);
-  } catch {
-    return 0;
-  }
-};
-
-export const incrementDeviceRegistrationCount = () => {
-  try {
-    const count = getDeviceRegistrationCount() + 1;
-    localStorage.setItem(DEVICE_LIMIT_KEY, count.toString());
-    return count;
-  } catch {
-    return 0;
-  }
-};
-
+// Device registration limit removed - unlimited registrations allowed
 export const isDeviceLimitReached = () => {
-  return getDeviceRegistrationCount() >= DEVICE_LIMIT;
+  return false;
 };
 
 export const resetDeviceRegistrationCount = () => {

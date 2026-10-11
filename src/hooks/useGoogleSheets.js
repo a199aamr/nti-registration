@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { normalizePhone, incrementDeviceRegistrationCount, isDeviceLimitReached } from '../utils/validation';
+import { normalizePhone } from '../utils/validation';
 
 // ============================================
 // Google Apps Script Web App URL
 // ============================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkNxVNH8xzMISb5yJFtRvEKCpqt_2y8Bfr1MpP2i7aOm6syrivJAzfMGNRbYmi647J/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDBz8Upz7FaHM_IaqpOBcr_pnsUuHdydlTWHcxtPNa-HbuIeawK3CN4nZ3rsBenkIS/exec';
 
 export const useGoogleSheets = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +23,7 @@ export const useGoogleSheets = () => {
   };
 
   const checkDeviceLimit = () => {
-    return isDeviceLimitReached();
+    return false;
   };
 
   const submitRegistration = async (formData) => {
@@ -31,22 +31,19 @@ export const useGoogleSheets = () => {
     setError(null);
 
     try {
-      // Check device limit first
-      if (isDeviceLimitReached()) {
-        return { success: false, duplicate: false, deviceLimit: true };
-      }
-
       const normalized = normalizePhone(formData.phone);
       const name = formData.name.trim();
-      const faculty = formData.faculty;
 
       // Use GET with URL params - most reliable for Google Apps Script
       const params = new URLSearchParams({
         action: 'register',
         name: name,
         phone: normalized,
-        faculty: faculty,
       });
+
+      if (formData.nationalId) {
+        params.append('nationalId', formData.nationalId.trim());
+      }
 
       const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
       const result = await response.json();
@@ -56,7 +53,6 @@ export const useGoogleSheets = () => {
       }
 
       if (result.success) {
-        incrementDeviceRegistrationCount();
         return { success: true, duplicate: false };
       }
 
@@ -74,7 +70,6 @@ export const useGoogleSheets = () => {
 
   return {
     submitRegistration,
-    checkDuplicate,
     checkDeviceLimit,
     isSubmitting,
     error,

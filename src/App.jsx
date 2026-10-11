@@ -1,9 +1,8 @@
 import { useState, useCallback } from 'react';
 import ParticleBackground from './components/ParticleBackground';
 import Confetti from './components/Confetti';
-import { validateName, validatePhone, validateFaculty, normalizePhone, isDeviceLimitReached } from './utils/validation';
+import { validateName, validatePhone, validateNationalId, normalizePhone } from './utils/validation';
 import { useGoogleSheets } from './hooks/useGoogleSheets';
-import eeluLogo from './assets/eelu-logo.jpg';
 import creativaLogo from './assets/creativa-logo.png';
 import ntiLogo from './assets/nti-logo.png';
 
@@ -18,6 +17,16 @@ const UserIcon = () => (
 const PhoneIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  </svg>
+);
+
+const IdCardIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <circle cx="9" cy="10" r="2" />
+    <line x1="15" y1="8" x2="17" y2="8" />
+    <line x1="15" y1="12" x2="17" y2="12" />
+    <line x1="7" y1="16" x2="17" y2="16" />
   </svg>
 );
 
@@ -66,9 +75,9 @@ const CalendarIcon = () => (
 
 const ErrorCircleIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2"/>
-    <line x1="12" y1="8" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+    <line x1="12" y1="8" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="12" cy="16" r="1" fill="currentColor" />
   </svg>
 );
 
@@ -98,12 +107,10 @@ const ITIcon = () => (
 function App() {
   // Screens: 'welcome', 'form', 'success', 'duplicate', 'error'
   const [screen, setScreen] = useState('welcome');
-  const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState('right');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    faculty: '',
+    nationalId: '',
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -112,18 +119,12 @@ function App() {
   const { submitRegistration, checkDeviceLimit, isSubmitting } = useGoogleSheets();
 
   const handleStartRegistration = () => {
-    // Check device limit before showing form
-    if (isDeviceLimitReached()) {
-      setScreen('deviceLimit');
-      return;
-    }
     setScreen('form');
-    setStep(1);
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error on change
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -141,30 +142,34 @@ function App() {
     switch (field) {
       case 'name':
         if (!formData.name.trim()) {
-          newErrors.name = 'Name is required';
+          newErrors.name = 'الاسم بالكامل مطلوب';
         } else if (formData.name.trim().length > 60) {
-          newErrors.name = 'Name is too long (max 60 characters)';
+          newErrors.name = 'الاسم طويل جداً (الحد الأقصى 60 حرفاً)';
         } else if (!validateName(formData.name)) {
-          newErrors.name = 'Enter your full name (first & last name, letters only)';
+          newErrors.name = 'يرجى إدخال اسم ثنائي على الأقل (بالحروف فقط)';
         } else {
           delete newErrors.name;
         }
         break;
       case 'phone':
         if (!formData.phone.trim()) {
-          newErrors.phone = 'Phone number is required';
+          newErrors.phone = 'رقم الهاتف مطلوب';
         } else if (!validatePhone(formData.phone)) {
-          newErrors.phone = 'Enter a valid Egyptian phone number (01XXXXXXXXX)';
+          newErrors.phone = 'يرجى إدخال رقم هاتف مصري صحيح (01XXXXXXXXX)';
         } else {
           delete newErrors.phone;
         }
         break;
-      case 'faculty':
-        if (!validateFaculty(formData.faculty)) {
-          newErrors.faculty = 'Please select your faculty';
+      case 'nationalId':
+        if (!formData.nationalId.trim()) {
+          newErrors.nationalId = 'الرقم القومي مطلوب';
+        } else if (!validateNationalId(formData.nationalId)) {
+          newErrors.nationalId = 'يرجى إدخال رقم قومي صحيح مكون من 14 رقماً';
         } else {
-          delete newErrors.faculty;
+          delete newErrors.nationalId;
         }
+        break;
+      default:
         break;
     }
 
@@ -175,72 +180,53 @@ function App() {
   const validateStep1 = () => {
     const nameValid = validateName(formData.name);
     const phoneValid = validatePhone(formData.phone);
+    const nationalIdValid = validateNationalId(formData.nationalId);
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'الاسم بالكامل مطلوب';
     } else if (formData.name.trim().length > 60) {
-      newErrors.name = 'Name is too long (max 60 characters)';
+      newErrors.name = 'الاسم طويل جداً (الحد الأقصى 60 حرفاً)';
     } else if (!nameValid) {
-      newErrors.name = 'Enter your full name (first & last name, letters only)';
+      newErrors.name = 'يرجى إدخال اسم ثنائي على الأقل (بالحروف فقط)';
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = 'رقم الهاتف مطلوب';
     } else if (!phoneValid) {
-      newErrors.phone = 'Enter a valid Egyptian phone number (01XXXXXXXXX)';
+      newErrors.phone = 'يرجى إدخال رقم هاتف مصري صحيح (01XXXXXXXXX)';
+    }
+
+    if (!formData.nationalId.trim()) {
+      newErrors.nationalId = 'الرقم القومي مطلوب';
+    } else if (!nationalIdValid) {
+      newErrors.nationalId = 'يرجى إدخال رقم قومي صحيح مكون من 14 رقماً';
     }
 
     setErrors(newErrors);
-    setTouched({ name: true, phone: true });
+    setTouched({ name: true, phone: true, nationalId: true });
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (step === 1) {
-      if (!validateStep1()) return;
-      setDirection('right');
-      setStep(2);
-    }
-  };
-
-  const handleBack = () => {
-    setDirection('left');
-    setStep(1);
-  };
-
-  const handleFacultySelect = (faculty) => {
-    setFormData(prev => ({ ...prev, faculty }));
-    if (errors.faculty) {
-      setErrors(prev => ({ ...prev, faculty: '' }));
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!validateFaculty(formData.faculty)) {
-      setErrors(prev => ({ ...prev, faculty: 'Please select your faculty' }));
-      return;
-    }
+    if (!validateStep1()) return;
 
     const result = await submitRegistration(formData);
-    
+
     if (result.success && !result.duplicate) {
       setShowConfetti(true);
       setScreen('success');
     } else if (result.duplicate) {
       setScreen('duplicate');
-    } else if (result.deviceLimit) {
-      setScreen('deviceLimit');
     } else {
       setScreen('error');
     }
   };
 
   const handleNewRegistration = () => {
-    setFormData({ name: '', phone: '', faculty: '' });
+    setFormData({ name: '', phone: '', nationalId: '' });
     setErrors({});
     setTouched({});
-    setStep(1);
     setShowConfetti(false);
     setScreen('welcome');
   };
@@ -266,14 +252,14 @@ function App() {
               <img src={ntiLogo} alt="NTI Logo" className="welcome-logo" style={{ objectFit: 'contain' }} />
             </div>
 
-            <h1 className="welcome-title">Orientation Day</h1>
+            <h1 className="welcome-title">NTI Aswan</h1>
             <p className="welcome-subtitle">
-              Welcome to <span>Creativa</span> — Aswan
+              <span>NTI</span> — Welcome to NTI Aswan
             </p>
 
             <div className="welcome-date">
               <CalendarIcon />
-              Season 2026 — New Students Welcome
+              موسم 2026 — نرحب بالطلاب الجدد
             </div>
 
             <button
@@ -281,15 +267,13 @@ function App() {
               onClick={handleStartRegistration}
               id="register-btn"
             >
-              Register Now
+              سجل الآن
               <span className="cta-button-arrow">
                 <ArrowRight />
               </span>
             </button>
 
             <div className="logo-bar">
-              <img src={ntiLogo} alt="NTI Logo" />
-              <div className="logo-bar-divider" />
               <img src={creativaLogo} alt="Creativa Logo" />
             </div>
           </div>
@@ -314,24 +298,26 @@ function App() {
               </div>
             </div>
 
-            <h2 className="success-title">You're Registered!</h2>
+            <h2 className="success-title">تم التسجيل بنجاح!</h2>
             <p className="success-message">
-              Welcome aboard! We're excited to see you at the Orientation Day. Get ready for an amazing experience!
+              شكراً لتسجيلك، نتطلع لرؤيتك قريباً!
             </p>
 
             <div className="success-info-card">
               <div className="success-info-row">
-                <span className="success-info-label">Name</span>
+                <span className="success-info-label">الاسم بالكامل</span>
                 <span className="success-info-value">{formData.name}</span>
               </div>
               <div className="success-info-row">
-                <span className="success-info-label">Phone</span>
+                <span className="success-info-label">رقم الهاتف</span>
                 <span className="success-info-value">{normalizePhone(formData.phone)}</span>
               </div>
-              <div className="success-info-row">
-                <span className="success-info-label">Faculty</span>
-                <span className="success-info-value">Faculty of {formData.faculty}</span>
-              </div>
+              {formData.nationalId && (
+                <div className="success-info-row">
+                  <span className="success-info-label">الرقم القومي</span>
+                  <span className="success-info-value">{formData.nationalId}</span>
+                </div>
+              )}
             </div>
 
             <button
@@ -340,7 +326,7 @@ function App() {
               id="new-registration-btn"
             >
               <ArrowLeft />
-              New Registration
+              تسجيل جديد
             </button>
           </div>
         </div>
@@ -356,9 +342,9 @@ function App() {
         <div className="app-container">
           <div className="error-screen">
             <AlertIcon />
-            <h2 className="error-title">Already Registered!</h2>
+            <h2 className="error-title">تم التسجيل مسبقاً!</h2>
             <p className="error-message">
-              This phone number has already been used to register. Each student can only register once.
+              تم استخدام رقم الهاتف هذا للتسجيل مسبقاً. يمكن لكل طالب التسجيل مرة واحدة فقط.
             </p>
             <button
               className="btn btn-ghost"
@@ -366,36 +352,7 @@ function App() {
               id="back-home-btn"
             >
               <ArrowLeft />
-              Back to Home
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Device Limit Screen
-  if (screen === 'deviceLimit') {
-    return (
-      <>
-        <ParticleBackground />
-        <div className="app-container">
-          <div className="error-screen">
-            <svg className="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" />
-            </svg>
-            <h2 className="error-title">Device Limit Reached</h2>
-            <p className="error-message">
-              You've registered 5 people from this device. To register more students, please use a different device or browser.
-            </p>
-            <button
-              className="btn btn-ghost"
-              onClick={handleNewRegistration}
-              id="back-home-limit-btn"
-            >
-              <ArrowLeft />
-              Back to Home
+              العودة للرئيسية
             </button>
           </div>
         </div>
@@ -412,25 +369,25 @@ function App() {
           <div className="error-screen">
             <AlertIcon />
             <h2 className="error-title" style={{ color: 'var(--color-error)' }}>
-              Something Went Wrong
+              حدث خطأ ما
             </h2>
             <p className="error-message">
-              We couldn't process your registration. Please check your internet connection and try again.
+              لم نتمكن من إتمام التسجيل. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
                 className="btn btn-primary"
-                onClick={() => { setScreen('form'); setStep(2); }}
+                onClick={() => setScreen('form')}
                 id="retry-btn"
               >
-                <span>Try Again</span>
+                <span>إعادة المحاولة</span>
               </button>
               <button
                 className="btn btn-ghost"
                 onClick={handleNewRegistration}
                 id="back-home-error-btn"
               >
-                Back to Home
+                العودة للرئيسية
               </button>
             </div>
           </div>
@@ -448,209 +405,130 @@ function App() {
           {/* Top logo small */}
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <img
-              src={eeluLogo}
-              alt="EELU"
+              src={ntiLogo}
+              alt="NTI"
               style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                border: '2px solid var(--border-color)',
-                objectFit: 'cover',
+                width: '64px',
+                height: '64px',
+                objectFit: 'contain',
+                filter: 'brightness(0) invert(1)',
               }}
             />
           </div>
 
           <div className="form-card">
-            {/* Progress Bar */}
-            <div className="progress-container">
-              <div className="progress-steps">
-                <div className="progress-step">
-                  <div className={`progress-dot ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
-                    {step > 1 ? <CheckIcon /> : '1'}
-                  </div>
-                </div>
-                <div className={`progress-line ${step > 1 ? 'active' : ''}`} />
-                <div className="progress-step">
-                  <div className={`progress-dot ${step >= 2 ? 'active' : ''}`}>
-                    2
-                  </div>
-                </div>
-              </div>
-              <div className="progress-labels">
-                <span className={`progress-label ${step === 1 ? 'active' : ''}`}>Personal Info</span>
-                <span className={`progress-label ${step === 2 ? 'active' : ''}`}>Faculty</span>
-              </div>
+
+            <div className="form-header">
+              <h2>البيانات الشخصية</h2>
+              <p>من فضلك أدخل بياناتك</p>
             </div>
 
-            {/* Step 1: Personal Info */}
-            {step === 1 && (
-              <div className={direction === 'right' ? 'step-enter-right' : 'step-enter-left'} key="step1">
-                <div className="form-header">
-                  <h2>Personal Information</h2>
-                  <p>Tell us about yourself</p>
-                </div>
-
-                <div className="input-group">
-                  <label className={`input-label ${touched.name && !errors.name ? 'focused' : ''}`} htmlFor="name-input">
-                    Full Name
-                  </label>
-                  <div className="input-icon-wrapper">
-                    <span className="input-icon"><UserIcon /></span>
-                    <input
-                      id="name-input"
-                      type="text"
-                      className={getInputClassName('name')}
-                      placeholder="e.g. Ahmed Mohamed"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      onBlur={() => handleBlur('name')}
-                      autoComplete="name"
-                      maxLength={60}
-                    />
-                  </div>
-                  {touched.name && errors.name && (
-                    <div className="input-error">
-                      <ErrorCircleIcon />
-                      {errors.name}
-                    </div>
-                  )}
-                </div>
-
-                <div className="input-group">
-                  <label className={`input-label ${touched.phone && !errors.phone ? 'focused' : ''}`} htmlFor="phone-input">
-                    Phone Number
-                  </label>
-                  <div className="input-icon-wrapper">
-                    <span className="input-icon"><PhoneIcon /></span>
-                    <input
-                      id="phone-input"
-                      type="tel"
-                      className={getInputClassName('phone')}
-                      placeholder="01XXXXXXXXX"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      onBlur={() => handleBlur('phone')}
-                      autoComplete="tel"
-                      maxLength={11}
-                    />
-                  </div>
-                  {touched.phone && errors.phone && (
-                    <div className="input-error">
-                      <ErrorCircleIcon />
-                      {errors.phone}
-                    </div>
-                  )}
-                  <div className="input-hint">Egyptian phone number format</div>
-                </div>
-
-                <div className="form-nav" style={{ justifyContent: 'flex-end' }}>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleNext}
-                    id="next-btn"
-                  >
-                    <span>
-                      Next
-                      <ArrowRight />
-                    </span>
-                  </button>
-                </div>
+            <div className="input-group">
+              <label className={`input-label ${touched.name && !errors.name ? 'focused' : ''}`} htmlFor="name-input">
+                الاسم بالكامل
+              </label>
+              <div className="input-icon-wrapper">
+                <span className="input-icon"><UserIcon /></span>
+                <input
+                  id="name-input"
+                  type="text"
+                  className={getInputClassName('name')}
+                  placeholder="مثال: أحمد محمد"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
+                  autoComplete="name"
+                  maxLength={60}
+                />
               </div>
-            )}
-
-            {/* Step 2: Faculty Selection */}
-            {step === 2 && (
-              <div className={direction === 'right' ? 'step-enter-right' : 'step-enter-left'} key="step2">
-                <div className="form-header">
-                  <h2>Select Your Faculty</h2>
-                  <p>Choose the faculty you're enrolling in</p>
+              {touched.name && errors.name && (
+                <div className="input-error">
+                  <ErrorCircleIcon />
+                  {errors.name}
                 </div>
+              )}
+            </div>
 
-                <div className="faculty-grid">
-                  <div
-                    className={`faculty-card ${formData.faculty === 'Business' ? 'selected' : ''}`}
-                    onClick={() => handleFacultySelect('Business')}
-                    id="faculty-business"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFacultySelect('Business')}
-                  >
-                    <div className="faculty-check">
-                      <CheckIcon />
-                    </div>
-                    <BusinessIcon />
-                    <div>
-                      <div className="faculty-name">Business</div>
-                      <div className="faculty-desc">Faculty of Business</div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`faculty-card ${formData.faculty === 'IT' ? 'selected' : ''}`}
-                    onClick={() => handleFacultySelect('IT')}
-                    id="faculty-it"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFacultySelect('IT')}
-                  >
-                    <div className="faculty-check">
-                      <CheckIcon />
-                    </div>
-                    <ITIcon />
-                    <div>
-                      <div className="faculty-name">IT</div>
-                      <div className="faculty-desc">Information Technology</div>
-                    </div>
-                  </div>
-                </div>
-
-                {errors.faculty && (
-                  <div className="input-error" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
-                    <ErrorCircleIcon />
-                    {errors.faculty}
-                  </div>
-                )}
-
-                <div className="form-nav">
-                  <button
-                    className="btn btn-ghost"
-                    onClick={handleBack}
-                    id="back-btn"
-                  >
-                    <ArrowLeft />
-                    Back
-                  </button>
-                  <button
-                    className="btn btn-primary btn-submit"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !formData.faculty}
-                    id="submit-btn"
-                    style={{ flex: 1 }}
-                  >
-                    <span>
-                      {isSubmitting ? (
-                        <>
-                          <div className="spinner" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          Submit Registration
-                          <CheckIcon />
-                        </>
-                      )}
-                    </span>
-                  </button>
-                </div>
+            <div className="input-group">
+              <label className={`input-label ${touched.phone && !errors.phone ? 'focused' : ''}`} htmlFor="phone-input">
+                رقم الهاتف
+              </label>
+              <div className="input-icon-wrapper">
+                <span className="input-icon"><PhoneIcon /></span>
+                <input
+                  id="phone-input"
+                  type="tel"
+                  className={getInputClassName('phone')}
+                  placeholder="01XXXXXXXXX"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  onBlur={() => handleBlur('phone')}
+                  autoComplete="tel"
+                  maxLength={11}
+                />
               </div>
-            )}
+              {touched.phone && errors.phone && (
+                <div className="input-error">
+                  <ErrorCircleIcon />
+                  {errors.phone}
+                </div>
+              )}
+              <div className="input-hint">اكتب رقمك — يبدأ بـ 01 وطوله 11 رقم</div>
+            </div>
+
+            <div className="input-group">
+              <label className={`input-label ${touched.nationalId && !errors.nationalId ? 'focused' : ''}`} htmlFor="national-id-input">
+                الرقم القومي (14 رقم)
+              </label>
+              <div className="input-icon-wrapper">
+                <span className="input-icon"><IdCardIcon /></span>
+                <input
+                  id="national-id-input"
+                  type="tel"
+                  className={getInputClassName('nationalId')}
+                  placeholder="الرقم القومي (14 رقم)"
+                  value={formData.nationalId}
+                  onChange={(e) => handleInputChange('nationalId', e.target.value.replace(/\D/g, ''))}
+                  onBlur={() => handleBlur('nationalId')}
+                  maxLength={14}
+                />
+              </div>
+              {touched.nationalId && errors.nationalId && (
+                <div className="input-error">
+                  <ErrorCircleIcon />
+                  {errors.nationalId}
+                </div>
+              )}
+            </div>
+
+            <div className="form-nav" style={{ justifyContent: 'center' }}>
+              <button
+                className="btn btn-primary btn-submit"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                id="submit-btn"
+                style={{ width: '100%' }}
+              >
+                <span>
+                  {isSubmitting ? (
+                    <>
+                      <div className="spinner" />
+                      جاري الإرسال...
+                    </>
+                  ) : (
+                    <>
+                      إرسال التسجيل
+                      <CheckIcon />
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Bottom logos */}
           <div className="logo-bar" style={{ marginTop: '1.5rem', justifyContent: 'center' }}>
             <img src={creativaLogo} alt="Creativa" />
-            <div className="logo-bar-divider" />
-            <img src={ntiLogo} alt="NTI" />
           </div>
         </div>
       </div>
